@@ -20,4 +20,8 @@ describe('libraryinth-spire routes', () => {
     await mongoose.connection.close();
     return mongod.stop();
   });
+
+  it('does nothing', () => {
+    expect(1).toEqual(1);
+  });
 });
