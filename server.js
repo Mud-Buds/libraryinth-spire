@@ -3,6 +3,10 @@ require('./lib/utils/connect')();
 
 const app = require('./lib/app');
 
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
+
 const PORT = process.env.PORT || 7890;
 
 const http = app.listen(PORT, () => {
@@ -22,12 +26,12 @@ io.on('connection', (socket) => {
   
   // display the Message of the Day
   const displayMOTD = setTimeout(() => {
-    socket.emit('chat', { msg: MOTD, color: 'blue' });
+    socket.emit('chat', { msg: 'Welcome to the Libraryinth Spire!', color: 'blue' });
   }, 3000);
 
   // emit message to all when receiving message from client
   socket.on('chat', (input) => {
-    io.emit('chat', input);
+    io.emit('chat', { msg: socket.id.slice(-3) + ': ' + input });
 
 
     // call the parser here
