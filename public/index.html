@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; background: #1e1e1e }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: 0.5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #1a1a1a; }
+    </style>
+  </head>
+  <body id="body">
+    <ul id="messages"></ul>
+    <form id="form" action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      (function() {
+        var socket = io();
+        const form = document.getElementById("form");
+        // add eventListenser to the form
+        form.addEventListener('submit', e => {
+          e.preventDefault();
+          const m = document.getElementById('m');
+          socket.emit('chat', m.value);
+          m.value = '';
+          return false
+        });
+
+        // grab anything emitted to 'chat'
+        socket.on('chat', function(data){
+
+          // example of data
+          exampleData: {
+            msg: 'The room is dark. You look around and see furniture faintly illuminated by the static on the TV.' // This is the message that is returned
+            color: 'Red' // sets the color of msg, could maybe have msg return as html/spans to have multi-color messages
+            background: '#1e1e1e' // sets the background of the body
+            // whatever else you want to add to this object can modify the DOM
+          }
+
+          // create li and set properties from emitted message
+          let li = document.createElement('li');
+          li.textContent = data?.msg || 'error';
+          li.style.color = data?.color || '#ddd';
+
+          // display the emitted message
+          document.getElementById('messages').appendChild(li);
+
+          // set background if exists
+          if(data.background) document.getElementById('body').style.background = data.background;
+
+        });
+      })();
+    </script>
+  </body>
+</html>
