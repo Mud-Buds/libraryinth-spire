@@ -64,14 +64,6 @@
         // grab anything emitted to 'chat'
         socket.on('chat', function(data){
 
-          // example of data
-          exampleData: {
-            msg: 'The room is dark. You look around and see furniture faintly illuminated by the static on the TV.' // This is the message that is returned
-            color: 'Red' // sets the color of msg, could maybe have msg return as html/spans to have multi-color messages
-            background: '#1e1e1e' // sets the background of the body
-            // whatever else you want to add to this object can modify the DOM
-          }
-
           // create li and set properties from emitted message
           let li = document.createElement('li');
           li.textContent = data?.msg || 'error';
