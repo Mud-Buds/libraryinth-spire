@@ -1,6 +1,10 @@
 require('dotenv').config();
 require('./lib/utils/connect')();
 
+// const horrorRoom = require('./lib/rooms/horror');
+
+// horrorRoom();
+
 const app = require('./lib/app');
 
 app.get('/', (req, res) => {
