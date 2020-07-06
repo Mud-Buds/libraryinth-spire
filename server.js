@@ -1,5 +1,12 @@
 require('dotenv').config();
 require('./lib/utils/connect')();
+const mongoose = require('mongoose');
+
+mongoose.connection.dropDatabase();
+
+const horrorRoom = require('./lib/rooms/horror');
+
+horrorRoom();
 
 const app = require('./lib/app');
 
@@ -15,6 +22,7 @@ const http = app.listen(PORT, () => {
 const io = require('socket.io').listen(http);
 
 const { gameParser, chatParser } = require('./lib/helpers/parser');
+const { Mongoose } = require('mongoose');
 
 io.on('connection', (socket) => {
   // console.log(socket);
@@ -42,9 +50,9 @@ io.on('connection', (socket) => {
       });
   });
 
-  socket.on('game', () => {
-    socket.emit('game', { msg: 'you are in a dark room. You are unable to move and can\'t see anything.' });
-  });
+  // socket.on('game', () => {
+  //   socket.emit('game', { msg: 'you are in a dark room. You are unable to move and can\'t see anything.' });
+  // });
 
   // clear timeout on disconnect
   socket.on('disconnect', () => {
