@@ -41,8 +41,5 @@ Adjust the displayMOTD chat message to specify that this is the chat where you c
 
 Include an intro message for the game in displayMOTD:
 
-//socket.emit('game', { msg: 'Created by Erik Ford, Logan Scott, Melissa Smoot, and Rachel Donahue. Welcome to the <ASCII art displaying the name of the game> *Libraryinth*  You have entered a story where you can type commands to interact with the narrative.  Type 'look entrance' to get started. })
+//socket.emit('game', { msg: 'Created by Erik Ford, Logan Scott, Melissa Smoot, and Rachel Donahue. Welcome to the <ASCII art displaying the name of the game> *Libraryinth*  You have entered a story where you can type commands to interact with the narrative.  Type 'look entrance' to get started.', color: 'green' })
 
-
-in socket.on('game')
-//io.emit('game', { msg: 'You have entered the libraryinth. Type "look entrance" to get started.', color: 'green' })
