@@ -4,9 +4,11 @@ const mongoose = require('mongoose');
 
 mongoose.connection.dropDatabase();
 
+const library = require('./lib/rooms/library');
 const horrorRoom = require('./lib/rooms/horror');
 
-horrorRoom();
+Promise.resolve(library())
+  .then(() => horrorRoom());
 
 const app = require('./lib/app');
 
@@ -61,7 +63,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('game', (input) => {
-    gameParser(input)
+    gameParser(input, socket)
       .then(res => socket.emit('game', res))
       .catch(res => {
         socket.emit('game', res);
