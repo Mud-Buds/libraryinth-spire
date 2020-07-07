@@ -48,6 +48,7 @@
         chatform.addEventListener('submit', e => {
           e.preventDefault();
           const m = document.getElementById('m');
+          if(m.value === '') return false;
           socket.emit('chat', m.value);
           m.value = '';
           return false
@@ -56,6 +57,7 @@
         gameform.addEventListener('submit', e => {
           e.preventDefault();
           const m = document.getElementById('gm');
+          if(m.value === '') return false;
           socket.emit('game', m.value);
           m.value = '';
           return false
@@ -72,7 +74,7 @@
 
           // display the emitted message
           document.getElementById('chatMessages').appendChild(li);
-
+          document.getElementById('chatMessages').scrollTo(0, 999999);
           // set background if exists
           if(data.background) document.getElementById('body').style.background = data.background;
 
@@ -95,6 +97,7 @@
 
         // display the emitted message
         document.getElementById('gameMessages').appendChild(li);
+        document.getElementById('gameMessages').scrollTo(0, 999999);
 
         // set background if exists
         if(data.background) document.getElementById('body').style.background = data.background;
