@@ -4,9 +4,11 @@ const mongoose = require('mongoose');
 
 mongoose.connection.dropDatabase();
 
+const library = require('./lib/rooms/library');
 const horrorRoom = require('./lib/rooms/horror');
 
-horrorRoom();
+Promise.resolve(library())
+  .then(() => horrorRoom());
 
 const app = require('./lib/app');
 
