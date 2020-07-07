@@ -45,7 +45,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('game', (input) => {
-    gameParser(input)
+    gameParser(input, socket)
       .then(res => socket.emit('game', res))
       .catch(res => {
         socket.emit('game', res);
