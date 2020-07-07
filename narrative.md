@@ -36,8 +36,13 @@ User can *look* at the old _car_
   //this starts the _car_
   //user wins game (drive through _door_)
 
+In server.js:
+Adjust the displayMOTD chat message to specify that this is the chat where you can communicate with other players.
+
+Include an intro message for the game in displayMOTD:
+
+//socket.emit('game', { msg: 'Created by Erik Ford, Logan Scott, Melissa Smoot, and Rachel Donahue. Welcome to the <ASCII art displaying the name of the game> *Libraryinth*  You have entered a story where you can type commands to interact with the narrative.  Type 'look entrance' to get started. })
 
 
-
-
-
+in socket.on('game')
+//io.emit('game', { msg: 'You have entered the libraryinth. Type "look entrance" to get started.', color: 'green' })
