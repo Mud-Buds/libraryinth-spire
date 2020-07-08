@@ -42,9 +42,11 @@
     <script>
       (function() {
         const socket = io();
-        if(localStorage.getItem('session')){
-          socket.emit('authenticate', localStorage.getItem('session'));
-        }
+
+        // can be used for auto login if token is present
+        // if(localStorage.getItem('session')){
+        //   socket.emit('authenticate', localStorage.getItem('session'));
+        // }
 
         // let nick = prompt('What is your desired username?');
         const chatform = document.getElementById("chatform");
@@ -78,6 +80,7 @@
           // create li and set properties from emitted message
           let li = document.createElement('li');
           // prevent clients from writing html in chat
+          console.log(data);
           if(data?.html) {
             li.innerHTML = data?.msg || 'error';
           } else {

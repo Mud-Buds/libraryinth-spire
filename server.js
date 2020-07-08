@@ -46,12 +46,13 @@ io.on('connection', async(socket) => {
   socket.request.user = {};
   socket.request.user.username = 'guest-' + socket.id.slice(0, 4);
 
-  socket.on('authenticate', (input) => {
-    const user = User.verifyToken(input);
-    user.socket = socket.id;
-    user.save();
-    socket.request.user = user;
-  });
+  // can be used for auto login on connect if token is present
+  // socket.on('authenticate', (input) => {
+  //   const user = User.verifyToken(input);
+  //   user.socket = socket.id;
+  //   user.save();
+  //   socket.request.user = user;
+  // });
 
   const connectedUser = setTimeout(() => {
     console.log(`${socket.id} connected`);
@@ -67,15 +68,26 @@ io.on('connection', async(socket) => {
   // right col - The Chat Window
   socket.on('chat', (input) => {
     if(input.slice(0, 1) === '/') {
-      // console.log(socket.request.user);
-      // console.log(socket.id);
       commandParser(input, socket)
         .then(res => {
           console.log(res);
-          if(res.toUser) {
-            io.to(res.toUser).emit('chat', {
-              msg: 'from ' + socket.request.user.username + ': ' + res.msg
-            });
+          console.log('socketme', socket.id);
+          if('toUser' in res) {
+            if(io.sockets.connected[res.toUser]){
+              socket.emit('chat', { 
+                ...res,
+                msg: 'to ' + res.toUsername + ': ' + res.msg
+              });
+              io.to(res.toUser).emit('chat', { 
+                ...res,
+                msg: 'from ' + socket.request.user.username + ': ' + res.msg 
+              });
+            } else {
+              socket.emit('chat', {
+                msg: 'User ' + res.toUsername + ' is not online',
+                color: 'lightcoral'
+              });
+            }
           } else {
             socket.emit('chat', {
               msg: '> <span style="font-style: italic;">' + input + '</span>',
