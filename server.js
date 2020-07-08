@@ -6,9 +6,13 @@ mongoose.connection.dropDatabase();
 
 const library = require('./lib/rooms/library');
 const horrorRoom = require('./lib/rooms/horror');
+const sciFiRoom = require('./lib/rooms/sci-fi');
+const fantasyRoom = require('./lib/rooms/fantasy');
 
 Promise.resolve(library())
-  .then(() => horrorRoom());
+  .then(() => horrorRoom())
+  .then(() => sciFiRoom())
+  .then(() => fantasyRoom());
 
 const app = require('./lib/app');
 
