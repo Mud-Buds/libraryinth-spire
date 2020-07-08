@@ -2,32 +2,16 @@ const User = require('../models/User');
 const Room = require('../models/Room');
 const Item = require('../models/Item');
 
-const gameParser = async(input, socket) => {
-  console.log(input);
-  const parsed = input.split(' ');
+const tagInput = require('../lang-processing/tagInput');
 
-  'look table';
-
-  // room {}
-  //   [objects]
-  //     [interactions]
-
-
-  // action = parsed[0]
-  // object = parsed[1]
-
-  // potential language processing
-  // response:
+const gameParser = async(input) => {
+  const { action, object, target, error } = tagInput(input);
 
   // example error
-  if(parsed.length < 2) return Promise.reject({
-    msg: 'error',
+  if(error) return Promise.reject({
+    msg: error,
     color: 'red'
   });
-
-  const action = parsed[0]; //use
-  const object = parsed[1]; //key
-  const target = parsed[2]; //door
   
   // fix this later - get current user
   const user = await User.findOne();
@@ -54,11 +38,6 @@ const gameParser = async(input, socket) => {
   }
 
   return Promise.resolve(response);
-};
-
-const chatParser = (input) => {
-  console.log(input);
-  return Promise.resolve(input);
 };
 
 const lookFunc = async(user, obj, action) => {
@@ -161,6 +140,5 @@ const useFunc = async(user, obj, action, target) => {
 };
 
 module.exports = {
-  chatParser,
   gameParser
 };
