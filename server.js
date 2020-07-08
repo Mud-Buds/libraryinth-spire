@@ -1,5 +1,6 @@
 require('dotenv').config();
 require('./lib/utils/connect')();
+const socketioJwt = require('socketio-jwt');
 const mongoose = require('mongoose');
 
 mongoose.connection.dropDatabase();
@@ -27,10 +28,26 @@ const { gameParser } = require('./lib/helpers/gameParser');
 const { chatParser } = require('./lib/helpers/chatParser');
 const { commandParser } = require('./lib/helpers/commandParser');
 
+io.use((socket, next) => {
+  console.log('io middleware');
+  console.log(Object.keys(socket.request));
+
+  socket.emit('chat', { msg: 'question?' });
+
+  // const token = req.cookies.session;
+  // const user = User.verifyToken(token);
+  // socket.request.user = user;
+  return next();
+});
+
 io.on('connection', (socket) => {
+
+  socket.request.user = {};
+  socket.request.user.username = 'guest-' + socket.id.slice(0, 4);
+
   // console.log(socket);
   console.log(`${socket.id} connected`);
-  io.emit('chat', { msg: 'guest-' + socket.id.slice(0, 4) + ' connected' });
+  io.emit('chat', { msg: socket.request.user.username + ' connected' });
 
   // console.log(socket.id);
 
@@ -62,16 +79,18 @@ io.on('connection', (socket) => {
   // emit message to all when receiving message from client
   socket.on('chat', (input) => {
     if(input.slice(0, 1) === '/') {
-      commandParser(input)
-        .then(res => {
-          res.html = true;
-          socket.emit('chat', res);
-        })
+      socket.emit('chat', {
+        msg: '> <span style="font-style: italic;">' + input + '</span>',
+        color: 'grey',
+        html: true
+      });
+      commandParser(input, socket)
+        .then(res => socket.emit('chat', res))
         .catch(res => socket.emit('chat', res));
     } else {
       chatParser(input)
         .then(parsed => io.emit('chat', {
-          msg: 'guest-' + socket.id.slice(0, 4) + ': ' + parsed 
+          msg: socket.request.user.username + ': ' + parsed 
         }))
         .catch(res => socket.emit('chat', res));
     }
@@ -79,7 +98,12 @@ io.on('connection', (socket) => {
 
   socket.on('game', (input) => {
     if(input.slice(0, 1) === '/') {
-      commandParser(input)
+      socket.emit('game', {
+        msg: '> <span style="font-style: italic;">' + input + '</span>',
+        color: 'grey',
+        html: true
+      });
+      commandParser(input, socket)
         .then(res => socket.emit('game', res))
         .catch(res => socket.emit('game', res));
     } else {
@@ -100,7 +124,7 @@ io.on('connection', (socket) => {
 
   // clear timeout on disconnect
   socket.on('disconnect', () => {
-    console.log(`${socket.id} disconnected`);
+    console.log(`${socket.request.user.username} disconnected`);
     clearTimeout(displayMOTD);
   });
 });
