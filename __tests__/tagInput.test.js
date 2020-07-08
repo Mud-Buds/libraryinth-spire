@@ -40,7 +40,7 @@ describe('tagInput module', () => {
     const inputB = 'get jars';
     const inputC = 'pick up jars';
 
-    const parseObject = { action: 'take', object: 'jars', target: 'jars' };
+    const parseObject = { action: 'take', object: 'jars' };
 
     expect(tagInput(inputA)).toEqual(parseObject);
     expect(tagInput(inputB)).toEqual(parseObject);
@@ -52,7 +52,19 @@ describe('tagInput module', () => {
     const inputB = 'look through the window';
     const inputC = 'inspect the window';
 
-    const parseObject = { action: 'look', object: 'window', target: 'window' };
+    const parseObject = { action: 'look', object: 'window' };
+
+    expect(tagInput(inputA)).toEqual(parseObject);
+    expect(tagInput(inputB)).toEqual(parseObject);
+    expect(tagInput(inputC)).toEqual(parseObject);
+  });
+
+  it('returns parsing object without a target prop, if none is specified', () => {
+    const inputA = 'use book';
+    const inputB = 'Use the book';
+    const inputC = 'open the book';
+
+    const parseObject = { action: 'use', object: 'book' };
 
     expect(tagInput(inputA)).toEqual(parseObject);
     expect(tagInput(inputB)).toEqual(parseObject);
