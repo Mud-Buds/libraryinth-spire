@@ -42,6 +42,10 @@
     <script>
       (function() {
         const socket = io();
+        if(localStorage.getItem('session')){
+          socket.emit('authenticate', localStorage.getItem('session'));
+        }
+
         // let nick = prompt('What is your desired username?');
         const chatform = document.getElementById("chatform");
         const gameform = document.getElementById("gameform");
@@ -62,6 +66,10 @@
           socket.emit('game', m.value);
           m.value = '';
           return false
+        });
+
+        socket.on('authenticated', function(data){
+          localStorage.setItem('session', data)
         });
 
         // grab anything emitted to 'chat'

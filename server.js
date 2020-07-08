@@ -26,6 +26,7 @@ const io = require('socket.io').listen(http);
 const { gameParser } = require('./lib/helpers/gameParser');
 const { chatParser } = require('./lib/helpers/chatParser');
 const { commandParser } = require('./lib/helpers/commandParser');
+const User = require('./lib/models/User');
 
 io.use((socket, next) => {
   console.log('io middleware');
@@ -34,19 +35,28 @@ io.use((socket, next) => {
   // socket.emit('chat', { msg: 'question?' });
 
   // ensureAuth?
-  // const token = req.cookies.session;
+  // const token = req.cookies.session; // req is express
   // const user = User.verifyToken(token);
   // socket.request.user = user;
   return next();
 });
 
-io.on('connection', (socket) => {
+io.on('connection', async(socket) => {
 
   socket.request.user = {};
   socket.request.user.username = 'guest-' + socket.id.slice(0, 4);
 
-  console.log(`${socket.id} connected`);
-  io.emit('chat', { msg: socket.request.user.username + ' connected' });
+  socket.on('authenticate', (input) => {
+    const user = User.verifyToken(input);
+    user.socket = socket.id;
+    user.save();
+    socket.request.user = user;
+  });
+
+  const connectedUser = setTimeout(() => {
+    console.log(`${socket.id} connected`);
+    io.emit('chat', { msg: socket.request.user.username + ' connected' });
+  }, 300);
 
   // display the Message of the Day
   const motdTitle = require('./motd');
@@ -57,15 +67,24 @@ io.on('connection', (socket) => {
   // right col - The Chat Window
   socket.on('chat', (input) => {
     if(input.slice(0, 1) === '/') {
-      socket.emit('chat', {
-        msg: '> <span style="font-style: italic;">' + input + '</span>',
-        color: 'grey',
-        html: true
-      });
-      console.log(socket.request.user);
-      console.log(socket.id);
+      // console.log(socket.request.user);
+      // console.log(socket.id);
       commandParser(input, socket)
-        .then(res => socket.emit('chat', res))
+        .then(res => {
+          console.log(res);
+          if(res.toUser) {
+            io.to(res.toUser).emit('chat', {
+              msg: 'from ' + socket.request.user.username + ': ' + res.msg
+            });
+          } else {
+            socket.emit('chat', {
+              msg: '> <span style="font-style: italic;">' + input + '</span>',
+              color: 'grey',
+              html: true
+            });
+            socket.emit('chat', res);
+          }
+        })
         .catch(res => socket.emit('chat', res));
     } else {
       chatParser(input)
@@ -102,5 +121,6 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`${socket.request.user.username} disconnected`);
     clearTimeout(displayMOTD);
+    clearTimeout(connectedUser);
   });
 });
