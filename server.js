@@ -23,7 +23,9 @@ const http = app.listen(PORT, () => {
 });
 const io = require('socket.io').listen(http);
 
-const { gameParser, chatParser } = require('./lib/helpers/parser');
+const { gameParser } = require('./lib/helpers/gameParser');
+const { chatParser } = require('./lib/helpers/chatParser');
+const { commandParser } = require('./lib/helpers/commandParser');
 
 io.on('connection', (socket) => {
   // console.log(socket);
@@ -59,16 +61,38 @@ io.on('connection', (socket) => {
 
   // emit message to all when receiving message from client
   socket.on('chat', (input) => {
-    io.emit('chat', { msg: 'guest-' + socket.id.slice(0, 4) + ': ' + input });
+    if(input.slice(0, 1) === '/') {
+      commandParser(input)
+        .then(res => {
+          res.html = true;
+          socket.emit('chat', res);
+        })
+        .catch(res => socket.emit('chat', res));
+    } else {
+      chatParser(input)
+        .then(parsed => io.emit('chat', {
+          msg: 'guest-' + socket.id.slice(0, 4) + ': ' + parsed 
+        }))
+        .catch(res => socket.emit('chat', res));
+    }
   });
 
   socket.on('game', (input) => {
-    gameParser(input, socket)
-      .then(res => socket.emit('game', res))
-      .catch(res => {
-        socket.emit('game', res);
+    if(input.slice(0, 1) === '/') {
+      commandParser(input)
+        .then(res => socket.emit('game', res))
+        .catch(res => socket.emit('game', res));
+    } else {
+      socket.emit('game', { 
+        msg: '> ' + input,
+        color: 'burlywood'
       });
+      gameParser(input)
+        .then(res => socket.emit('game', res))
+        .catch(res => socket.emit('game', res));
+    }
   });
+  
 
   // socket.on('game', () => {
   //   socket.emit('game', { msg: 'you are in a dark room. You are unable to move and can\'t see anything.' });
