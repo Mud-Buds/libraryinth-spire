@@ -23,12 +23,36 @@ describe('tagInput module', () => {
     return mongod.stop();
   });
 
-  it('returns consistent parsing objects for USE KEY DOOR', () => {
+  it('returns consistent parsing object for USE KEY DOOR', () => {
     const inputA = 'use key door';
     const inputB = 'Use the key on the door';
     const inputC = 'unlock the door with the key';
 
     const parseObject = { action: 'use', object: 'key', target: 'door' };
+
+    expect(tagInput(inputA)).toEqual(parseObject);
+    expect(tagInput(inputB)).toEqual(parseObject);
+    expect(tagInput(inputC)).toEqual(parseObject);
+  });
+
+  it('returns consistent parsing object for TAKE JARS', () => {
+    const inputA = 'take jars';
+    const inputB = 'get jars';
+    const inputC = 'pick up jars';
+
+    const parseObject = { action: 'take', object: 'jars', target: 'jars' };
+
+    expect(tagInput(inputA)).toEqual(parseObject);
+    expect(tagInput(inputB)).toEqual(parseObject);
+    expect(tagInput(inputC)).toEqual(parseObject);
+  });
+
+  it('returns consistent parsing object for LOOK WINDOW', () => {
+    const inputA = 'look window';
+    const inputB = 'look through the window';
+    const inputC = 'inspect the window';
+
+    const parseObject = { action: 'look', object: 'window', target: 'window' };
 
     expect(tagInput(inputA)).toEqual(parseObject);
     expect(tagInput(inputB)).toEqual(parseObject);
