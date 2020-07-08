@@ -26,7 +26,6 @@ const io = require('socket.io').listen(http);
 const { gameParser } = require('./lib/helpers/gameParser');
 const { chatParser } = require('./lib/helpers/chatParser');
 const { commandParser } = require('./lib/helpers/commandParser');
-const User = require('./lib/models/User');
 
 io.use((socket, next) => {
   console.log('io middleware');
