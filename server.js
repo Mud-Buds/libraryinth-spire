@@ -66,7 +66,7 @@ io.on('connection', async(socket) => {
   // display the Message of the Day
   const motdTitle = require('./motd');
   const displayMOTD = setTimeout(() => {
-    socket.emit('game', { msg: '<span style="font-size: 10px; color: blue; white-space: pre; font-family: monospace">' + motdTitle + '</span><br /><br /><span style="color:white">MOTD goes here.</span><hr /><br />', color: 'skyblue' });
+    socket.emit('game', { msg: '<span style="font-size: 10px; color: blue; white-space: pre; font-family: monospace">' + motdTitle + '</span><br /><br /><span style="color:white">Welcome to the Libraryinth! Try actions <span class="action">look</span>, <span class="action">use</span>, <span class="action">take</span>, and <span class="action">talk</span> to interact with the Libraryinth and stories within! Try /help for more information.</span><hr /><br />', color: 'skyblue' });
   }, 2000);
 
   // right col - The Chat Window
@@ -149,7 +149,7 @@ io.on('connection', async(socket) => {
         msg: '> ' + input,
         color: 'burlywood'
       });
-      gameParser(input)
+      gameParser(input, socket)
         .then(res => socket.emit('game', res))
         .catch(res => socket.emit('game', res));
     }
