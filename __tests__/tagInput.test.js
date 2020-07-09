@@ -70,4 +70,16 @@ describe('tagInput module', () => {
     expect(tagInput(inputB)).toEqual(parseObject);
     expect(tagInput(inputC)).toEqual(parseObject);
   });
+
+  it('returns the same parsing object for "look entrance", "look room", and "look"', () => {
+    const inputA = 'look entrance';
+    const inputB = 'look';
+    const inputC = 'look room';
+
+    const parseObject = { action: 'look', object: 'entrance' };
+
+    expect(tagInput(inputA)).toEqual(parseObject);
+    expect(tagInput(inputB)).toEqual(parseObject);
+    expect(tagInput(inputC)).toEqual(parseObject);
+  });
 });
