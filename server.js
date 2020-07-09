@@ -28,7 +28,7 @@ const http = app.listen(PORT, () => {
 const io = require('socket.io').listen(http);
 
 const { gameParser } = require('./lib/helpers/gameParser');
-const { chatParser } = require('./lib/helpers/chatParser');
+const { chatParser, chatAnnounce } = require('./lib/helpers/chatParser');
 const { commandParser } = require('./lib/helpers/commandParser');
 
 io.use((socket, next) => {
@@ -72,7 +72,7 @@ io.on('connection', async(socket) => {
   // right col - The Chat Window
   socket.on('chat', (input) => {
     if(input.slice(0, 1) === '/') {
-      commandParser(input, socket, io)
+      commandParser(input, socket, 'chat')
         .then(res => {
           // console.log(res);
           // console.log('socketme', socket.id);
@@ -112,6 +112,8 @@ io.on('connection', async(socket) => {
             });
             // parsed command response in chat (things like login/signup success/error)
             socket.emit('chat', res);
+            // announce username change
+            if(res.announce) chatAnnounce(res.announce, io);
           }
         })
         .catch(res => socket.emit('chat', res));
@@ -133,7 +135,13 @@ io.on('connection', async(socket) => {
         color: 'grey',
         html: true
       });
-      commandParser(input, socket)
+      commandParser(input, socket, 'game')
+        .then(res => {
+          // announce username change
+          if(res.announce) chatAnnounce(res.announce, io);
+          console.log(res);
+          return res;
+        })
         .then(res => socket.emit('game', res))
         .catch(res => socket.emit('game', res));
     } else {
