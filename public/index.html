@@ -105,7 +105,7 @@
           background: '#1e1e1e' // sets the background of the body
           // whatever else you want to add to this object can modify the DOM
         }
-
+        console.log(data);
         // create li and set properties from emitted message
         let li = document.createElement('li');
         li.innerHTML = data?.msg || 'error';
