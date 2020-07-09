@@ -49,6 +49,11 @@ io.on('connection', async(socket) => {
   socket.request.user = {};
   socket.request.user.username = 'guest-' + socket.id.slice(0, 4);
 
+  console.log({
+    username: socket.request.user.username,
+    handshake: socket.handshake
+  });
+
   // can be used for auto login on connect if token is present
   // socket.on('authenticate', (input) => {
   //   const user = User.verifyToken(input);
