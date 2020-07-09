@@ -57,6 +57,7 @@ io.on('connection', async(socket) => {
   //   socket.request.user = user;
   // });
 
+  // originally, delay helped with auto login after User.verifyToken() to show user joining, not guest
   const connectedUser = setTimeout(() => {
     console.log(`${socket.id} connected`);
     io.emit('chat', { msg: socket.request.user.username + ' connected' });
@@ -71,37 +72,51 @@ io.on('connection', async(socket) => {
   // right col - The Chat Window
   socket.on('chat', (input) => {
     if(input.slice(0, 1) === '/') {
-      commandParser(input, socket)
+      commandParser(input, socket, io)
         .then(res => {
-          console.log(res);
-          console.log('socketme', socket.id);
-          if('toUser' in res) {
+          // console.log(res);
+          // console.log('socketme', socket.id);
+          // handle emotes
+          if(res.type === 'emote'){
+            io.emit('chat', {
+              ...res,
+              msg: socket.request.user.username + ' ' + res.msg 
+            });
+          }
+          // handle whispers with a to message to client and from message to recipient
+          else if('toUser' in res) {
             if(io.sockets.connected[res.toUser]){
+              // show whisper sent from client to client
               socket.emit('chat', { 
                 ...res,
                 msg: 'to ' + res.toUsername + ': ' + res.msg
               });
+              // show whisper from client to recipient
               io.to(res.toUser).emit('chat', { 
                 ...res,
                 msg: 'from ' + socket.request.user.username + ': ' + res.msg 
               });
             } else {
+              // recipient is not online
               socket.emit('chat', {
                 msg: 'User ' + res.toUsername + ' is not online',
                 color: 'lightcoral'
               });
             }
           } else {
+            // show copy of command entered if not matched before now (basically echo non-chat commands)
             socket.emit('chat', {
               msg: '> <span style="font-style: italic;">' + input + '</span>',
               color: 'grey',
               html: true
             });
+            // parsed command response in chat (things like login/signup success/error)
             socket.emit('chat', res);
           }
         })
         .catch(res => socket.emit('chat', res));
     } else {
+      // standard chat response (to all)
       chatParser(input)
         .then(parsed => io.emit('chat', {
           msg: socket.request.user.username + ': ' + parsed 
