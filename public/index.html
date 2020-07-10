@@ -1,0 +1,139 @@
+<!doctype html>
+<html>
+  <head>
+    <title>The Libraryinth</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { height: 100%; }
+      body { font: 13px monospace; background: #222 }
+      #chatform { background: #000; padding: 3px; flex: 0 0 42px; }
+      #chatform input { border: 0; padding: 10px; width: 90%; margin-right: 0.5%; }
+      #chatform button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #gameform { background: #000; padding: 3px; flex: 0 0 42px; }
+      #gameform input { border: 0; padding: 10px; width: 90%; margin-right: 0.5%; }
+      #gameform button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #chatMessages { list-style-type: none; margin: 0; padding: 0; height: 100%; overflow-y: scroll; overflow-x: hidden; }
+      #chatMessages li { padding: 5px 10px; }
+      #chatMessages li:nth-child(odd) { background: #1e1e1e; }
+      #gameMessages { background: #131313; list-style-type: none; margin: 0; padding: 0; height: 100%; overflow-y: scroll; overflow-x: hidden; }
+      #gameMessages li { padding: 5px 10px; }
+      /* #gameMessages li:nth-child(odd) { } */
+      #mudContainer { width: 100%; display: flex; height: 100%; }
+      #leftcol { width: 62%; height: 100%; border: 1px solid black; display: flex; flex-direction: column; }
+      #rightcol { width: 38%; height: 100%; border: 1px solid black; display: flex; flex-direction: column; }
+      .action { color: green }
+      .object { color: cyan }
+      .success { color: forestgreen }
+      .error { color: lightcoral }
+      .help { color: cyan }
+      .default { color: white }
+    </style>
+  </head>
+  <body id="body">
+    <div id="mudContainer">
+      <div id="leftcol">
+        <ul id="gameMessages"></ul>
+        <form id="gameform" action="">
+          <input id="gm" autocomplete="off" /><button>Send</button>
+        </form>
+      </div>
+      <div id="rightcol">
+        <ul id="chatMessages"></ul>
+        <form id="chatform" action="">
+          <input id="m" autocomplete="off" /><button>Chat</button>
+        </form>
+      </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      (function() {
+        const socket = io();
+
+        // can be used for auto login if token is present
+        // if(localStorage.getItem('session')){
+        //   socket.emit('authenticate', localStorage.getItem('session'));
+        // }
+
+        // let nick = prompt('What is your desired username?');
+        const chatform = document.getElementById("chatform");
+        const gameform = document.getElementById("gameform");
+        // add eventListenser to the form
+        chatform.addEventListener('submit', e => {
+          e.preventDefault();
+          const m = document.getElementById('m');
+          if(m.value === '') return false;
+          socket.emit('chat', m.value);
+          m.value = '';
+          return false
+        });
+
+        gameform.addEventListener('submit', e => {
+          e.preventDefault();
+          const m = document.getElementById('gm');
+          if(m.value === '') return false;
+          socket.emit('game', m.value);
+          m.value = '';
+          return false
+        });
+
+        socket.on('authenticated', function(data){
+          localStorage.setItem('session', data)
+        });
+
+        // grab anything emitted to 'chat'
+        socket.on('chat', function(data){
+
+          // create li and set properties from emitted message
+          let li = document.createElement('li');
+          // prevent clients from writing html in chat
+          console.log(data);
+          if(data?.html) {
+            li.innerHTML = data?.msg || 'error - no msg returned';
+          } else {
+            li.textContent = data?.msg || 'error - no msg returned';
+          }
+          if(data?.color) li.style.color = data.color;
+          li.className = 'default';
+          if(data?.style) li.className = data.style;
+
+          // display the emitted message
+          document.getElementById('chatMessages').appendChild(li);
+          document.getElementById('chatMessages').scrollTo(0, 999999);
+          // set background if exists
+          if(data.background) document.getElementById('body').style.background = data.background;
+
+        });
+        // grab anything emitted to 'chat'
+        socket.on('game', function(data){
+
+        // example of data
+        exampleData: {
+          msg: 'The room is dark. You look around and see furniture faintly illuminated by the static on the TV.' // This is the message that is returned
+          color: 'Red' // sets the color of msg, could maybe have msg return as html/spans to have multi-color messages
+          background: '#1e1e1e' // sets the background of the body
+          // whatever else you want to add to this object can modify the DOM
+        }
+        console.log(data);
+        // create li and set properties from emitted message
+        let li = document.createElement('li');
+        if(data?.html) {
+            li.innerHTML = data?.msg || 'error - no msg returned';
+          } else {
+            li.textContent = data?.msg || 'error - no msg returned';
+          }
+        if(data?.color) li.style.color = data.color;
+        li.className = 'default';
+        if(data?.style) li.className = data.style;
+
+        // display the emitted message
+        document.getElementById('gameMessages').appendChild(li);
+        document.getElementById('gameMessages').scrollTo(0, 999999);
+
+        // set background if exists
+        if(data.background) document.getElementById('body').style.background = data.background;
+
+        });
+      })();
+    </script>
+  </body>
+</html>
