@@ -21,12 +21,13 @@
       #mudContainer { width: 100%; display: flex; height: 100%; }
       #leftcol { width: 62%; height: 100%; border: 1px solid black; display: flex; flex-direction: column; }
       #rightcol { width: 38%; height: 100%; border: 1px solid black; display: flex; flex-direction: column; }
-      .action { color: green }
+      .action { color: cyan }
       .object { color: cyan }
       .success { color: forestgreen }
       .error { color: lightcoral }
       .help { color: cyan }
       .default { color: white }
+      .system { color: gold }
     </style>
   </head>
   <body id="body">
@@ -48,7 +49,7 @@
     <script>
       (function() {
         const socket = io();
-
+        let connected;
         // can be used for auto login if token is present
         // if(localStorage.getItem('session')){
         //   socket.emit('authenticate', localStorage.getItem('session'));
@@ -57,6 +58,8 @@
         // let nick = prompt('What is your desired username?');
         const chatform = document.getElementById("chatform");
         const gameform = document.getElementById("gameform");
+        const chatinput = document.getElementById("m");
+        const gameinput = document.getElementById("gm");
         // add eventListenser to the form
         chatform.addEventListener('submit', e => {
           e.preventDefault();
@@ -76,6 +79,35 @@
           return false
         });
 
+        chatinput.addEventListener('focus', e => {
+          if(!connected) socket.emit('joinchat')
+          connected = true;
+        });
+
+        gameinput.addEventListener('focus', e => {
+          if(!connected) socket.emit('joinchat')
+          connected = true;
+        });
+
+        socket.on('connect', () => {
+          if(connected) socket.emit('joinchat');
+          let li = document.createElement('li');
+          li.textContent = '> Connected to server';
+          li.className = 'system';
+
+          document.getElementById('chatMessages').appendChild(li);
+          document.getElementById('chatMessages').scrollTo(0, 999999);
+        });
+
+        socket.on('disconnect', () => {
+          let li = document.createElement('li');
+          li.textContent = '> Disconnected from server';
+          li.className = 'system';
+
+          document.getElementById('chatMessages').appendChild(li);
+          document.getElementById('chatMessages').scrollTo(0, 999999);
+        });
+
         socket.on('authenticated', function(data){
           localStorage.setItem('session', data)
         });
@@ -88,9 +120,9 @@
           // prevent clients from writing html in chat
           console.log(data);
           if(data?.html) {
-            li.innerHTML = data?.msg || 'error - no msg returned';
+            li.innerHTML = data?.msg || 'error - unknown command';
           } else {
-            li.textContent = data?.msg || 'error - no msg returned';
+            li.textContent = data?.msg || 'error - unknown command';
           }
           if(data?.color) li.style.color = data.color;
           li.className = 'default';
@@ -117,9 +149,9 @@
         // create li and set properties from emitted message
         let li = document.createElement('li');
         if(data?.html) {
-            li.innerHTML = data?.msg || 'error - no msg returned';
+            li.innerHTML = data?.msg || 'error - unknown command';
           } else {
-            li.textContent = data?.msg || 'error - no msg returned';
+            li.textContent = data?.msg || 'error - unknown command';
           }
         if(data?.color) li.style.color = data.color;
         li.className = 'default';
