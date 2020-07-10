@@ -2,7 +2,7 @@ require('dotenv').config();
 require('./lib/utils/connect')();
 const mongoose = require('mongoose');
 
-
+const User = require('./lib/models/User');
 
 const library = require('./lib/rooms/library');
 const horrorRoom = require('./lib/rooms/horror');
@@ -54,12 +54,12 @@ io.on('connection', (socket) => {
   socket.request.user.username = 'guest-' + socket.id.slice(0, 4);
 
   // can be used for auto login on connect if token is present
-  // socket.on('authenticate', (input) => {
-  //   const user = User.verifyToken(input);
-  //   user.socket = socket.id;
-  //   user.save();
-  //   socket.request.user = user;
-  // });
+  socket.on('authenticate', (input) => {
+    const user = User.verifyToken(input);
+    user.socket = socket.id;
+    user.save();
+    socket.request.user = user;
+  });
 
   // originally, delay helped with auto login after User.verifyToken() to show user joining, not guest
   const connectedUser = setTimeout(() => {

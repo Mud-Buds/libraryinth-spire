@@ -51,9 +51,9 @@
         const socket = io();
         let connected;
         // can be used for auto login if token is present
-        // if(localStorage.getItem('session')){
-        //   socket.emit('authenticate', localStorage.getItem('session'));
-        // }
+        if(sessionStorage.getItem('session')){
+          socket.emit('authenticate', sessionStorage.getItem('session'));
+        }
 
         // let nick = prompt('What is your desired username?');
         const chatform = document.getElementById("chatform");
@@ -109,7 +109,7 @@
         });
 
         socket.on('authenticated', function(data){
-          localStorage.setItem('session', data)
+          sessionStorage.setItem('session', data)
         });
 
         // grab anything emitted to 'chat'
