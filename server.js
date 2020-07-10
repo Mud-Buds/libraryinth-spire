@@ -3,6 +3,7 @@ require('./lib/utils/connect')();
 const mongoose = require('mongoose');
 
 const User = require('./lib/models/User');
+const Item = require('./lib/models/Item');
 
 const library = require('./lib/rooms/library');
 const horrorRoom = require('./lib/rooms/horror');
@@ -54,11 +55,34 @@ io.on('connection', (socket) => {
   socket.request.user.username = 'guest-' + socket.id.slice(0, 4);
 
   // can be used for auto login on connect if token is present
-  socket.on('authenticate', (input) => {
-    const user = User.verifyToken(input);
-    user.socket = socket.id;
-    user.save();
-    socket.request.user = user;
+  let reconnectLocation;
+  socket.on('authenticate', async(input) => {
+    let user = async() => await User.verifyToken(input);
+    user().then(async(res) => {
+      await User.findByIdAndUpdate(res._id, { socket: socket.id }, { new: true })
+        .then((res) => {
+          if(!res) throw Error;
+          socket.request.user = res;
+          reconnectLocation = setTimeout(async() => {
+            const entrance = await Item.findOne({
+              name: 'entrance',
+              room: res.currentLocation
+            });
+            const currentRoom = await entrance.interactions.get('look');
+            socket.emit('game', {
+              msg: currentRoom,
+              html: true
+            });
+          }, 2000);
+          socket.join('chat', () => {
+            chatAnnounce(socket.request.user.username + ' connected', io);
+            socket.request.chat = true;
+          });
+        })
+        .catch(() => {
+          // user not found... unauth? Message about user data reset?
+        });
+    });
   });
 
   // originally, delay helped with auto login after User.verifyToken() to show user joining, not guest
@@ -81,8 +105,10 @@ io.on('connection', (socket) => {
 
   socket.on('joinchat', () => {
     socket.join('chat', () => {
-      chatAnnounce(socket.request.user.username + ' connected', io);
-      socket.request.chat = true;
+      if(!socket.request.chat) {
+        chatAnnounce(socket.request.user.username + ' connected', io);
+        socket.request.chat = true;
+      }
     });
   });
 
@@ -185,5 +211,6 @@ io.on('connection', (socket) => {
     clearTimeout(displayMOTD);
     clearTimeout(displayCopyright);
     clearTimeout(connectedUser);
+    clearTimeout(reconnectLocation);
   });
 });
