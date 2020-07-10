@@ -165,7 +165,6 @@ io.on('connection', (socket) => {
       });
       gameParser(input, socket)
         .then(res => {
-          console.log('=======', res);
           socket.emit('game', res);
         })
         .catch(err => socket.emit('game', err));
