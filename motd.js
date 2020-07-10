@@ -31,13 +31,11 @@ const copyright = {
 };
 
 const motd = {
-  msg: '<span style="color:white">Welcome to the Libraryinth! Try actions \
-  <span class="action">look</span>, \
-  <span class="action">use</span>, \
-  <span class="action">take</span>, \
-  and <span class="action">talk</span> \
+  msg: '<span style="color:white">Welcome to the Libraryinth!\
+  To play the game, please register using the command <span class="help">/signup &lt;username&gt; &lt;password&gt;</span>, or login using <span class="help">/login &lt;username&gt; &lt;password&gt;</span><br /><br />\
+  Try actions <span class="action">look</span>, <span class="action">use</span>, <span class="action">take</span>, and <span class="action">talk</span> \
   to interact with the Libraryinth and stories within! \
-  Try /help for more information.<br /><br /></span><hr /><br />', 
+  Use <span class="help">/help</span> for more information.<br /><br /></span><hr /><br />', 
   html: true
 };
 
