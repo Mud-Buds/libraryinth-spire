@@ -83,17 +83,13 @@ io.on('connection', (socket) => {
     socket.join('chat', () => {
       chatAnnounce(socket.request.user.username + ' connected', io);
       socket.request.chat = true;
-      io.in('chat').clients((error, clients) => {
-        if(error) throw error;
-        console.log(clients);
-      });
     });
   });
 
   // right col - The Chat Window
   socket.on('chat', (input) => {
     if(input.slice(0, 1) === '/') {
-      commandParser(input, socket, 'chat')
+      commandParser(input, socket, 'chat', io)
         .then(res => {
           // handle emotes
           if(res.type === 'emote'){
@@ -154,7 +150,7 @@ io.on('connection', (socket) => {
         color: 'grey',
         html: true
       });
-      commandParser(input, socket, 'game')
+      commandParser(input, socket, 'game', io)
         .then(res => {
           // announce username change
           if(res.announce) chatAnnounce(res.announce, io);
@@ -173,7 +169,7 @@ io.on('connection', (socket) => {
         msg: '> ' + input,
         color: 'burlywood'
       });
-      gameParser(input, socket)
+      gameParser(input, socket, io)
         .then(res => {
           socket.emit('game', res);
         })
