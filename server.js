@@ -2,7 +2,7 @@ require('dotenv').config();
 require('./lib/utils/connect')();
 const mongoose = require('mongoose');
 
-mongoose.connection.dropDatabase();
+
 
 const library = require('./lib/rooms/library');
 const horrorRoom = require('./lib/rooms/horror');
@@ -10,10 +10,14 @@ const sciFiRoom = require('./lib/rooms/sci-fi');
 const fantasyRoom = require('./lib/rooms/fantasy');
 
 // create rooms - originally Promised to create off of instance of users
-library();
-horrorRoom();
-sciFiRoom();
-fantasyRoom();
+// need to wait for database to finish dropping
+mongoose.connection.dropDatabase()
+  .then(() => {
+    library();
+    horrorRoom();
+    sciFiRoom();
+    fantasyRoom();
+  });
 
 const app = require('./lib/app');
 
@@ -165,7 +169,6 @@ io.on('connection', (socket) => {
       });
       gameParser(input, socket)
         .then(res => {
-          console.log('=======', res);
           socket.emit('game', res);
         })
         .catch(err => socket.emit('game', err));
