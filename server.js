@@ -2,7 +2,8 @@ require('dotenv').config();
 require('./lib/utils/connect')();
 const mongoose = require('mongoose');
 
-
+const User = require('./lib/models/User');
+const Item = require('./lib/models/Item');
 
 const library = require('./lib/rooms/library');
 const horrorRoom = require('./lib/rooms/horror');
@@ -54,44 +55,71 @@ io.on('connection', (socket) => {
   socket.request.user.username = 'guest-' + socket.id.slice(0, 4);
 
   // can be used for auto login on connect if token is present
-  // socket.on('authenticate', (input) => {
-  //   const user = User.verifyToken(input);
-  //   user.socket = socket.id;
-  //   user.save();
-  //   socket.request.user = user;
-  // });
+  let reconnectLocation;
+  socket.on('authenticate', async(input) => {
+    let user = async() => await User.verifyToken(input);
+    user().then(async(res) => {
+      await User.findByIdAndUpdate(res._id, { socket: socket.id }, { new: true })
+        .then((res) => {
+          if(!res) throw Error;
+          socket.request.user = res;
+          reconnectLocation = setTimeout(async() => {
+            const entrance = await Item.findOne({
+              name: 'entrance',
+              room: res.currentLocation
+            });
+            const currentRoom = await entrance.interactions.get('look');
+            socket.emit('game', {
+              msg: currentRoom,
+              html: true
+            });
+          }, 2000);
+          socket.join('chat', () => {
+            chatAnnounce(socket.request.user.username + ' connected', io);
+            socket.request.chat = true;
+          });
+        })
+        .catch(() => {
+          // user not found... unauth? Message about user data reset?
+        });
+    });
+  });
 
   // originally, delay helped with auto login after User.verifyToken() to show user joining, not guest
   const connectedUser = setTimeout(() => {
     console.log(`${socket.id} connected`);
-    io.emit('chat', { msg: socket.request.user.username + ' connected' });
+    // chatAnnounce(socket.request.user.username + ' connected', io);
   }, 300);
 
   // display the Message of the Day
-  const motdTitle = require('./motd');
+  const { motd, motdTitle, copyright } = require('./motd');
+  const displayLogo = setTimeout(() => {
+    socket.emit('game', motdTitle);
+  }, 900);
+  const displayCopyright = setTimeout(() => {
+    socket.emit('game', copyright);
+  }, 1300);
   const displayMOTD = setTimeout(() => {
-    socket.emit('game', {
-      msg: '<span style="font-size: 10px; color: blue; white-space: pre;">' + motdTitle + '</span><br /><br /> \
-      <span style="color:white">Welcome to the Libraryinth! Try actions \
-      <span class="action">look</span>, \
-      <span class="action">use</span>, \
-      <span class="action">take</span>, \
-      and <span class="action">talk</span> \
-      to interact with the Libraryinth and stories within! \
-      Try /help for more information.<br /><br /></span><hr /><br />', 
-      color: 'skyblue',
-      html: true
+    socket.emit('game', motd);
+  }, 1600);
+
+  socket.on('joinchat', () => {
+    socket.join('chat', () => {
+      if(!socket.request.chat) {
+        chatAnnounce(socket.request.user.username + ' connected', io);
+        socket.request.chat = true;
+      }
     });
-  }, 2000);
+  });
 
   // right col - The Chat Window
   socket.on('chat', (input) => {
     if(input.slice(0, 1) === '/') {
-      commandParser(input, socket, 'chat')
+      commandParser(input, socket, 'chat', io)
         .then(res => {
           // handle emotes
           if(res.type === 'emote'){
-            io.emit('chat', {
+            io.to('chat').emit('chat', {
               ...res,
               msg: socket.request.user.username + ' ' + res.msg 
             });
@@ -133,7 +161,7 @@ io.on('connection', (socket) => {
     } else {
       // standard chat response (to all)
       chatParser(input)
-        .then(parsed => io.emit('chat', {
+        .then(parsed => io.to('chat').emit('chat', {
           msg: socket.request.user.username + ': ' + parsed 
         }))
         .catch(err => socket.emit('chat', err));
@@ -148,7 +176,7 @@ io.on('connection', (socket) => {
         color: 'grey',
         html: true
       });
-      commandParser(input, socket, 'game')
+      commandParser(input, socket, 'game', io)
         .then(res => {
           // announce username change
           if(res.announce) chatAnnounce(res.announce, io);
@@ -167,7 +195,7 @@ io.on('connection', (socket) => {
         msg: '> ' + input,
         color: 'burlywood'
       });
-      gameParser(input, socket)
+      gameParser(input, socket, io)
         .then(res => {
           socket.emit('game', res);
         })
@@ -178,7 +206,11 @@ io.on('connection', (socket) => {
   // clear timeout on disconnect
   socket.on('disconnect', () => {
     console.log(`${socket.request.user.username} disconnected`);
+    if(socket.request.chat) chatAnnounce(socket.request.user.username + ' disconnected', io);
+    clearTimeout(displayLogo);
     clearTimeout(displayMOTD);
+    clearTimeout(displayCopyright);
     clearTimeout(connectedUser);
+    clearTimeout(reconnectLocation);
   });
 });
