@@ -41,11 +41,6 @@ const { commandParser } = require('./lib/helpers/commandParser');
 io.use((socket, next) => {
   console.log('io middleware');
 
-  // ensureAuth?
-  // const token = req.cookies.session; // req is express
-  // const user = User.verifyToken(token);
-  // socket.request.user = user;
-
   return next();
 });
 
