@@ -2,20 +2,26 @@ require('dotenv').config();
 require('./lib/utils/connect')();
 const mongoose = require('mongoose');
 
-mongoose.connection.dropDatabase();
+
 
 const library = require('./lib/rooms/library');
 const horrorRoom = require('./lib/rooms/horror');
 const sciFiRoom = require('./lib/rooms/sci-fi');
 const fantasyRoom = require('./lib/rooms/fantasy');
 
-Promise.resolve(library())
-  .then(() => horrorRoom())
-  .then(() => sciFiRoom())
-  .then(() => fantasyRoom());
+// create rooms - originally Promised to create off of instance of users
+// need to wait for database to finish dropping
+mongoose.connection.dropDatabase()
+  .then(() => {
+    library();
+    horrorRoom();
+    sciFiRoom();
+    fantasyRoom();
+  });
 
 const app = require('./lib/app');
 
+// client
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
@@ -33,26 +39,19 @@ const { commandParser } = require('./lib/helpers/commandParser');
 
 io.use((socket, next) => {
   console.log('io middleware');
-  // console.log(Object.keys(socket.request));
-
-  // socket.emit('chat', { msg: 'question?' });
 
   // ensureAuth?
   // const token = req.cookies.session; // req is express
   // const user = User.verifyToken(token);
   // socket.request.user = user;
+
   return next();
 });
 
-io.on('connection', async(socket) => {
+io.on('connection', (socket) => {
 
   socket.request.user = {};
   socket.request.user.username = 'guest-' + socket.id.slice(0, 4);
-
-  console.log({
-    username: socket.request.user.username,
-    handshake: socket.handshake
-  });
 
   // can be used for auto login on connect if token is present
   // socket.on('authenticate', (input) => {
@@ -71,7 +70,18 @@ io.on('connection', async(socket) => {
   // display the Message of the Day
   const motdTitle = require('./motd');
   const displayMOTD = setTimeout(() => {
-    socket.emit('game', { msg: '<span style="font-size: 10px; color: blue; white-space: pre; font-family: monospace">' + motdTitle + '</span><br /><br /><span style="color:white">Welcome to the Libraryinth! Try actions <span class="action">look</span>, <span class="action">use</span>, <span class="action">take</span>, and <span class="action">talk</span> to interact with the Libraryinth and stories within! Try /help for more information.</span><hr /><br />', color: 'skyblue' });
+    socket.emit('game', {
+      msg: '<span style="font-size: 10px; color: blue; white-space: pre;">' + motdTitle + '</span><br /><br /> \
+      <span style="color:white">Welcome to the Libraryinth! Try actions \
+      <span class="action">look</span>, \
+      <span class="action">use</span>, \
+      <span class="action">take</span>, \
+      and <span class="action">talk</span> \
+      to interact with the Libraryinth and stories within! \
+      Try /help for more information.<br /><br /></span><hr /><br />', 
+      color: 'skyblue',
+      html: true
+    });
   }, 2000);
 
   // right col - The Chat Window
@@ -79,8 +89,6 @@ io.on('connection', async(socket) => {
     if(input.slice(0, 1) === '/') {
       commandParser(input, socket, 'chat')
         .then(res => {
-          // console.log(res);
-          // console.log('socketme', socket.id);
           // handle emotes
           if(res.type === 'emote'){
             io.emit('chat', {
@@ -105,7 +113,7 @@ io.on('connection', async(socket) => {
               // recipient is not online
               socket.emit('chat', {
                 msg: 'User ' + res.toUsername + ' is not online',
-                color: 'lightcoral'
+                style: 'error'
               });
             }
           } else {
@@ -121,14 +129,14 @@ io.on('connection', async(socket) => {
             if(res.announce) chatAnnounce(res.announce, io);
           }
         })
-        .catch(res => socket.emit('chat', res));
+        .catch(err => socket.emit('chat', err));
     } else {
       // standard chat response (to all)
       chatParser(input)
         .then(parsed => io.emit('chat', {
           msg: socket.request.user.username + ': ' + parsed 
         }))
-        .catch(res => socket.emit('chat', res));
+        .catch(err => socket.emit('chat', err));
     }
   });
 
@@ -144,19 +152,26 @@ io.on('connection', async(socket) => {
         .then(res => {
           // announce username change
           if(res.announce) chatAnnounce(res.announce, io);
-          console.log(res);
           return res;
         })
-        .then(res => socket.emit('game', res))
-        .catch(res => socket.emit('game', res));
+        .then(res => {
+          socket.emit('game', res);
+          if(res.currentRoom) socket.emit('game', {
+            msg: res.currentRoom,
+            html: true
+          });
+        })
+        .catch(err => socket.emit('game', err));
     } else {
       socket.emit('game', { 
         msg: '> ' + input,
         color: 'burlywood'
       });
       gameParser(input, socket)
-        .then(res => socket.emit('game', res))
-        .catch(res => socket.emit('game', res));
+        .then(res => {
+          socket.emit('game', res);
+        })
+        .catch(err => socket.emit('game', err));
     }
   });
 
