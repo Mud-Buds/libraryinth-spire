@@ -12,13 +12,13 @@ const fantasyRoom = require('./lib/rooms/fantasy');
 
 // create rooms - originally Promised to create off of instance of users
 // need to wait for database to finish dropping
-mongoose.connection.dropDatabase()
-  .then(() => {
-    library();
-    horrorRoom();
-    sciFiRoom();
-    fantasyRoom();
-  });
+// mongoose.connection.dropDatabase()
+//   .then(() => {
+//     library();
+//     horrorRoom();
+//     sciFiRoom();
+//     fantasyRoom();
+//   });
 
 const app = require('./lib/app');
 
