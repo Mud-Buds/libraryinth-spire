@@ -12,13 +12,13 @@ const fantasyRoom = require('./lib/rooms/fantasy');
 
 // create rooms - originally Promised to create off of instance of users
 // need to wait for database to finish dropping
-mongoose.connection.dropDatabase()
-  .then(() => {
-    library();
-    horrorRoom();
-    sciFiRoom();
-    fantasyRoom();
-  });
+// mongoose.connection.dropDatabase()
+//   .then(() => {
+//     library();
+//     horrorRoom();
+//     sciFiRoom();
+//     fantasyRoom();
+//   });
 
 const app = require('./lib/app');
 
@@ -199,8 +199,8 @@ io.on('connection', (socket) => {
   });
 
   // clear timeout on disconnect
-  socket.on('disconnect', () => {
-    console.log(`${socket.request.user.username} disconnected`);
+  socket.on('disconnect', (reason) => {
+    console.log(`${socket.handshake.time}: ${socket.handshake.address} - ${socket.id} (${socket.request.user.username}) disconnected. Reason: ${reason}.`);
     if(socket.request.chat) chatAnnounce(socket.request.user.username + ' disconnected', io);
     clearTimeout(displayLogo);
     clearTimeout(displayMOTD);
