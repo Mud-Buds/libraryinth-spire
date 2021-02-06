@@ -16,7 +16,7 @@ Rachel Donahue [@PeepTheMoon](https://github.com/PeepTheMoon)
 
 ## Project Planning:
 
-Our deployed site can be found here: https://libraryinth-spire.herokuapp.com/
+Our deployed site can be found here: https://libraryinth-spire-new.herokuapp.com/
 
 Links to project planning are on our [Miro board](https://miro.com/app/board/o9J_kprLgMk=/) and [GitHub](https://github.com/Mud-Buds/libraryinth-spire/projects/1).
 
