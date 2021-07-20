@@ -10,39 +10,24 @@ const horrorRoom = require('./lib/rooms/horror');
 const sciFiRoom = require('./lib/rooms/sci-fi');
 const fantasyRoom = require('./lib/rooms/fantasy');
 
-// create rooms - originally Promised to create off of instance of users
-// need to wait for database to finish dropping
-// mongoose.connection.dropDatabase()
-//   .then(() => {
-//     library();
-//     horrorRoom();
-//     sciFiRoom();
-//     fantasyRoom();
-//   });
-
 const app = require('./lib/app');
+const chatHandler = require('./lib/helpers/chat');
 
 // client
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
-});
+
 
 const PORT = process.env.PORT || 7890;
 const http = app.listen(PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`Started on ${PORT}`);
 });
+
+// all this should go into its own file. keep the server.js code clean
 const io = require('socket.io').listen(http);
 
 const { gameParser } = require('./lib/helpers/gameParser');
 const { chatParser, chatAnnounce } = require('./lib/helpers/chatParser');
 const { commandParser } = require('./lib/helpers/commandParser');
-
-io.use((socket, next) => {
-  console.log('io middleware');
-
-  return next();
-});
 
 io.on('connection', (socket) => {
 
@@ -52,31 +37,33 @@ io.on('connection', (socket) => {
   // can be used for auto login on connect if token is present
   let reconnectLocation;
   socket.on('authenticate', async(input) => {
-    let user = async() => await User.verifyToken(input);
-    user().then(async(res) => {
-      await User.findByIdAndUpdate(res._id, { socket: socket.id }, { new: true })
-        .then((res) => {
-          if(!res) throw Error;
-          socket.request.user = res;
-          reconnectLocation = setTimeout(async() => {
-            const entrance = await Item.findOne({
-              name: 'entrance',
-              room: res.currentLocation
-            });
-            const currentRoom = await entrance.interactions.get('look');
-            socket.emit('game', {
-              msg: currentRoom,
-              html: true
-            });
-          }, 2000);
-          socket.join('chat', () => {
-            chatAnnounce(socket.request.user.username + ' connected', io);
-            socket.request.chat = true;
-          });
-        })
-        .catch(() => {
-          // user not found... unauth? Message about user data reset?
+    // no need to wrap this in an async function
+    User
+    .verifyToken(input)
+    // no need for an async function and use meaningful names
+    .then(user => User.findByIdAndUpdate(user._id, { socket: socket.id }, { new: true }))
+    .then(user => {
+      if(!user) throw Error('No user found');
+      socket.request.user = res;
+      // dont use setTimeouts like this. its creating a race condition.
+      reconnectLocation = setTimeout(async() => {
+        const entrance = await Item.findOne({
+          name: 'entrance',
+          room: res.currentLocation
         });
+        const currentRoom = await entrance.interactions.get('look');
+        socket.emit('game', {
+          msg: currentRoom,
+          html: true
+        });
+      }, 2000);
+      socket.join('chat', () => {
+        chatAnnounce(socket.request.user.username + ' connected', io);
+        socket.request.chat = true;
+      });
+    })
+    .catch(() => {
+      // user not found... unauth? Message about user data reset?
     });
   });
 
@@ -108,60 +95,8 @@ io.on('connection', (socket) => {
   });
 
   // right col - The Chat Window
-  socket.on('chat', (input) => {
-    if(input.slice(0, 1) === '/') {
-      commandParser(input, socket, 'chat', io)
-        .then(res => {
-          // handle emotes
-          if(res.type === 'emote'){
-            io.to('chat').emit('chat', {
-              ...res,
-              msg: socket.request.user.username + ' ' + res.msg 
-            });
-          }
-          // handle whispers with a to message to client and from message to recipient
-          else if('toUser' in res) {
-            if(io.sockets.connected[res.toUser]){
-              // show whisper sent from client to client
-              socket.emit('chat', { 
-                ...res,
-                msg: 'to ' + res.toUsername + ': ' + res.msg
-              });
-              // show whisper from client to recipient
-              io.to(res.toUser).emit('chat', { 
-                ...res,
-                msg: 'from ' + socket.request.user.username + ': ' + res.msg 
-              });
-            } else {
-              // recipient is not online
-              socket.emit('chat', {
-                msg: 'User ' + res.toUsername + ' is not online',
-                style: 'error'
-              });
-            }
-          } else {
-            // show copy of command entered if not matched before now (basically echo non-chat commands)
-            socket.emit('chat', {
-              msg: '> <span style="font-style: italic;">' + input + '</span>',
-              color: 'grey',
-              html: true
-            });
-            // parsed command response in chat (things like login/signup success/error)
-            socket.emit('chat', res);
-            // announce username change
-            if(res.announce) chatAnnounce(res.announce, io);
-          }
-        })
-        .catch(err => socket.emit('chat', err));
-    } else {
-      // standard chat response (to all)
-      chatParser(input)
-        .then(parsed => io.to('chat').emit('chat', {
-          msg: socket.request.user.username + ': ' + parsed 
-        }))
-        .catch(err => socket.emit('chat', err));
-    }
-  });
+  // move logic to other files
+  socket.on('chat', (input) => chatHandler(input, socket, io));
 
   // left col - The Game Window
   socket.on('game', (input) => {
